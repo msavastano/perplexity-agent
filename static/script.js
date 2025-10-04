@@ -3,10 +3,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const userInput = document.getElementById("user-input");
     const sendButton = document.getElementById("send-button");
 
+    const converter = new showdown.Converter();
+
     function addMessage(message, sender) {
         const messageElement = document.createElement("div");
         messageElement.classList.add(sender === "user" ? "user-message" : "agent-message");
-        messageElement.innerText = message;
+
+        if (sender === 'agent') {
+            messageElement.innerHTML = converter.makeHtml(message);
+        } else {
+            messageElement.innerText = message;
+        }
+
         chatBox.appendChild(messageElement);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
@@ -17,6 +25,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         addMessage(message, "user");
         userInput.value = "";
+
+        const agentMessageElement = document.createElement("div");
+        agentMessageElement.classList.add("agent-message");
+        agentMessageElement.innerHTML = "<i>Thinking...</i>";
+        chatBox.appendChild(agentMessageElement);
+        chatBox.scrollTop = chatBox.scrollHeight;
 
         try {
             const response = await fetch("/chat", {
@@ -32,10 +46,13 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const data = await response.json();
-            addMessage(data.reply, "agent");
+            agentMessageElement.innerHTML = converter.makeHtml(data.reply);
+
         } catch (error) {
             console.error("Error sending message:", error);
-            addMessage("Sorry, something went wrong. Please try again.", "agent");
+            agentMessageElement.innerText = "Sorry, something went wrong. Please try again.";
+        } finally {
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
     }
 
