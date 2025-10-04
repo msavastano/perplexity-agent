@@ -4,13 +4,41 @@ This project is a simple, web-based chat agent that uses the Perplexity Sonar AP
 
 ## How it Works
 
-The application uses a Flask back end to serve a simple HTML, CSS, and JavaScript front end. When a user sends a message:
+The application is built on a client-server architecture using a Flask back end and a simple HTML/CSS/JavaScript front end.
 
-1.  The front end sends the message to the `/chat` endpoint on the Flask server.
-2.  The Flask server appends the message to the conversation history.
-3.  It sends the entire conversation to the Perplexity Sonar API.
-4.  The API returns a response, which the server sends back to the front end.
-5.  The front end displays the agent's reply in the chat window.
+### Back End (Flask)
+
+The core logic resides in `app.py`. The Flask application handles two main routes:
+
+*   **`/` (Home):** When a user first visits the site, this route renders the main chat page (`index.html`). A crucial step here is the clearing of the session history. This ensures that each visit starts a fresh conversation.
+*   **`/chat` (API Endpoint):** This endpoint receives POST requests from the front end containing the user's message. It manages the conversation flow by:
+    1.  Retrieving the user's message from the request body.
+    2.  Accessing the conversation history, which is stored in a Flask server-side session.
+    3.  Appending the new user message to the history.
+    4.  Sending the entire conversation history to the Perplexity Sonar API via the `openai` client library.
+    5.  Receiving the AI-generated response.
+    6.  Appending the assistant's response to the history.
+    7.  Updating the session with the new history.
+    8.  Returning the assistant's reply to the front end as a JSON object.
+
+### Front End (HTML/JS)
+
+The front end is a single-page interface that:
+1.  Captures user input from a text field.
+2.  Uses JavaScript's `fetch` API to send the message to the `/chat` endpoint.
+3.  Receives the JSON response from the server.
+4.  Dynamically creates and appends new chat bubbles to the display area for both user messages and agent replies.
+
+### Chat Session History
+
+The application maintains conversation context by keeping track of the chat history. This is accomplished using **Flask's session management**:
+
+*   **Server-Side Sessions:** Flask sessions are used to store the conversation history for each user. A session is a storage area on the server that is unique to each client. Flask uses a cryptographically signed cookie to associate a client with their session data, preventing tampering.
+*   **Initialization:** The application is configured with a `secret_key`, which is essential for securely signing the session cookie.
+*   **Storing Messages:** The conversation, a list of message objects, is stored in the `session` dictionary under the key `'messages'`.
+*   **State Management:**
+    *   When a new conversation begins at the `/` route, any existing `'messages'` data is cleared from the session.
+    *   In the `/chat` endpoint, the history is retrieved from the session, updated with the new user message and assistant reply, and then saved back into the session. This ensures that the context is maintained across multiple message exchanges within the same visit.
 
 ## Features
 
